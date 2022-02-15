@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, Integer, Float
+from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -20,6 +20,6 @@ class Bookings(Base):
     daily_impressions = Column('Daily Impressions', Integer)
 
     def __repr__(self):
-        return f'<Booking(Campaign External ID={self.campaign_external_id}, Campaign Name={self.campaign_name}, Start Date={self.start_date}, End Date={self.end_date}, Booked Impressions={self.booked_impressions}, Delivered Impressions={self.delivered_impressions}, Daily Impressions={self.daily_impressions})>'
+        return f'<Bookings(Campaign External ID={self.campaign_external_id}, Campaign Name={self.campaign_name}, Start Date={self.start_date}, End Date={self.end_date}, Booked Impressions={self.booked_impressions}, Delivered Impressions={self.delivered_impressions}, Daily Impressions={self.daily_impressions})>'
 
     
