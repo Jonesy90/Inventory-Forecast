@@ -1,4 +1,5 @@
 #Internal Imports
+from tracemalloc import start
 from models import *
 
 #External Imports
@@ -43,8 +44,16 @@ def daily_average(start_date, end_date, booked_impressions):
     Calculate the daily average for each booking within the Bookings DB.
 
     """       
-    days_running = end_date - start_date
-    average_impressions = booked_impressions / (int(days_running.days))
+    today = datetime.date.today()
+
+    if today >= end_date:
+        return 0
+    elif today <= start_date:
+        days_running = end_date - start_date
+        average_impressions = int(booked_impressions) / (int(days_running.days) + 1)
+    elif today >= start_date:
+        days_remaining = end_date - today
+        average_impressions = int(booked_impressions) / (int(days_remaining.days) + 1)
     return int(average_impressions)
 
 def add_campaign_bookings():
@@ -60,9 +69,9 @@ def add_campaign_bookings():
             campaign_name = row['Campaign Name']
             start_date = datetime.datetime.strptime(row['Start Date'], '%d/%m/%Y').date()
             end_date = datetime.datetime.strptime(row['End Date'], '%d/%m/%Y').date()
-            booked_impressions = row['Booked Impressions']
+            booked_impressions = row['Booked Impressions'].replace(',', '')
             delivered_impressions = row['Delivered Impressions']
-            daily_impressions = daily_average(start_date, end_date, campaign_external_id)
+            daily_impressions = daily_average(start_date, end_date, booked_impressions)
 
             new_booking = Bookings(campaign_external_id=campaign_external_id, campaign_name=campaign_name, start_date=start_date, end_date=end_date, booked_impressions=booked_impressions, delivered_impressions=delivered_impressions, daily_impressions=daily_impressions)
             booking_in_db = session.query(Bookings).filter(Bookings.campaign_external_id==new_booking.campaign_external_id).one_or_none()
@@ -74,13 +83,54 @@ def add_campaign_bookings():
                 session.commit()
 
 
+def forecast():
+    """
+    Populate the Forecast DB.
+    DATE: It would have every date within the current month.
+    INVENTORY AVAILABLE: The average amount of Inventory available.
+    INVENTORY USED: The amount of inventory used per day.
+    INVENTORY REMAINING: The amount of inventory remaining per day.
+
+    FIX:
+    1. Figure out a way to dynamically update the start and end date.
+    2. Loop over the Bookings DB.
+        a. If the campaign is live on the day, add the daily average impressions.
+    3. The USED INVENTORY and INVENTORY AVAILABLE is not totalling up to the inventory available.
+
+    """
+    start_date = datetime.date(2022, 2, 1)
+    end_date = datetime.date(2022, 2, 28)
+    delta = datetime.timedelta(days=1)
+    bookings = session.query(Bookings).all()
+    used_inventory = 0
+    inventory_available = 14000
+
+    while start_date <= end_date:
+        for booking in bookings:
+            if booking.start_date >= start_date:
+                used_inventory += booking.daily_impressions
+                inventory_remaining = int(used_inventory) - int(inventory_available)
+                forecast_data = Forecast(date=start_date, inventory_available=inventory_available, inventory_used=used_inventory, inventory_remaining=inventory_remaining)
+        used_inventory = 0
+        start_date += delta
+        session.add(forecast_data)
+        session.commit()
+
+  
+
+
+
+
+
 def app():
     add_campaign_bookings()
+    forecast()
     app_running = True
     while app_running:
         choice = menu()
         if choice == 'f':
             print('FORECAST')
+            forecast()
         elif choice == 'd':
             print('EXPORT')
         elif choice == 'e':

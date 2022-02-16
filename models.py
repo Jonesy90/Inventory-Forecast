@@ -28,7 +28,7 @@ class Forecast(Base):
     __tablename__ = 'Forecast'
 
     id = Column(Integer, primary_key=True)
-    date = Column('Date', String)
+    date = Column('Date', Date)
     inventory_available = Column('Inventory Available', Integer)
     inventory_used = Column('Inventory Used', Integer)
     inventory_remaining = Column('Inventory Remaining', Integer)
