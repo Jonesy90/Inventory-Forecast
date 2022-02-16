@@ -38,19 +38,14 @@ def menu():
             \r*****************************''')
 
 
-def daily_average(campaign_external_id):
+def daily_average(start_date, end_date, booked_impressions):
     """
     Calculate the daily average for each booking within the Bookings DB.
 
-    """
-    # print(campaign_external_id)
-    campaign = session.query(Bookings).filter(Bookings.campaign_external_id==campaign_external_id)
-    today = datetime.date.today()
-    
-    for camp in campaign:
-        days_running = (camp.end_date - camp.start_date)
-        print(f'Days Running: {int(days_running.days) + 1}')
-
+    """       
+    days_running = end_date - start_date
+    average_impressions = booked_impressions / (int(days_running.days))
+    return int(average_impressions)
 
 def add_campaign_bookings():
     """
@@ -67,7 +62,7 @@ def add_campaign_bookings():
             end_date = datetime.datetime.strptime(row['End Date'], '%d/%m/%Y').date()
             booked_impressions = row['Booked Impressions']
             delivered_impressions = row['Delivered Impressions']
-            daily_impressions = daily_average(campaign_external_id)
+            daily_impressions = daily_average(start_date, end_date, campaign_external_id)
 
             new_booking = Bookings(campaign_external_id=campaign_external_id, campaign_name=campaign_name, start_date=start_date, end_date=end_date, booked_impressions=booked_impressions, delivered_impressions=delivered_impressions, daily_impressions=daily_impressions)
             booking_in_db = session.query(Bookings).filter(Bookings.campaign_external_id==new_booking.campaign_external_id).one_or_none()
