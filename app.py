@@ -101,20 +101,13 @@ def forecast():
     start_date = datetime.date(2022, 2, 1)
     end_date = datetime.date(2022, 2, 28)
     delta = datetime.timedelta(days=1)
-    bookings = session.query(Bookings).all()
-    used_inventory = 0
-    inventory_available = 14000
 
     while start_date <= end_date:
-        for booking in bookings:
-            if booking.start_date >= start_date:
-                used_inventory += booking.daily_impressions
-                inventory_remaining = int(used_inventory) - int(inventory_available)
-                forecast_data = Forecast(date=start_date, inventory_available=inventory_available, inventory_used=used_inventory, inventory_remaining=inventory_remaining)
-        used_inventory = 0
-        start_date += delta
+        forecast_data = Forecast(date=start_date, inventory_available=140000, inventory_used=)
         session.add(forecast_data)
         session.commit()
+        start_date += delta
+
 
   
 
