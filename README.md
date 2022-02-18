@@ -22,7 +22,7 @@ Once, the tables are populated, it would then export them to a CSV and formatted
    - Daily Impressions
 
 2. Entertainment Forecast Table:
-   - Table Description:
+   - Table Description: Take the 'Daily Impressions' for all bookings that have a 'Content Group' == 'Ex Kids'. This will populate the 'Inventory Used'. 'Inventory Remaining' will show the remaining inventory available for that day.
    - Date
    - Inventory Available
    - Inventory Used
@@ -30,7 +30,7 @@ Once, the tables are populated, it would then export them to a CSV and formatted
 
 
 3. Kids Forecast Table:
-   - Table Description:
+   - Table Description: Take the 'Daily Impressions' for all bookings that have a 'Content Group' == 'Kids'. This will populate the 'Inventory Used'. 'Inventory Remaining' will show the remaining inventory available for that day.
    - Date
    - Inventory Available
    - Inventory Used
