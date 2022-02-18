@@ -65,15 +65,16 @@ def add_campaign_bookings():
     with open(booking_uploaded_csv, newline='') as csvfile:
         data = csv.DictReader(csvfile)
         for row in data:
-            campaign_external_id = row['\ufeffCampaign External ID']
-            campaign_name = row['Campaign Name']
-            start_date = datetime.datetime.strptime(row['Start Date'], '%d/%m/%Y').date()
-            end_date = datetime.datetime.strptime(row['End Date'], '%d/%m/%Y').date()
-            booked_impressions = row['Booked Impressions'].replace(',', '')
-            delivered_impressions = row['Delivered Impressions']
+            campaign_external_id = row['Campaign External ID']
+            campaign_name = row['Campaign']
+            start_date = datetime.datetime.strptime(row['Campaign Start Date'], '%d/%m/%Y').date()
+            end_date = datetime.datetime.strptime(row['Campaign End Date'], '%d/%m/%Y').date()
+            content_group = row['Content Group']
+            booked_impressions = row['Campaign Booked Impressions'].replace(',', '')
+            delivered_impressions = row['Impressions'].replace(',', '')
             daily_impressions = daily_average(start_date, end_date, booked_impressions)
 
-            new_booking = Bookings(campaign_external_id=campaign_external_id, campaign_name=campaign_name, start_date=start_date, end_date=end_date, booked_impressions=booked_impressions, delivered_impressions=delivered_impressions, daily_impressions=daily_impressions)
+            new_booking = Bookings(campaign_external_id=campaign_external_id, campaign_name=campaign_name, start_date=start_date, end_date=end_date, content_group=content_group, booked_impressions=booked_impressions, delivered_impressions=delivered_impressions, daily_impressions=daily_impressions)
             booking_in_db = session.query(Bookings).filter(Bookings.campaign_external_id==new_booking.campaign_external_id).one_or_none()
 
             if booking_in_db != None:
@@ -101,18 +102,72 @@ def forecast():
     start_date = datetime.date(2022, 2, 1)
     end_date = datetime.date(2022, 2, 28)
     delta = datetime.timedelta(days=1)
+    bookings = session.query(Bookings).all()
 
-    while start_date <= end_date:
-        forecast_data = Forecast(date=start_date, inventory_available=140000, inventory_used=)
-        session.add(forecast_data)
-        session.commit()
-        start_date += delta
+    # while start_date <= end_date:
+    #     entertainment_forecast_data = Entertainment_Forecast(date=start_date)
+    #     kids_forecast_data = Kids_Forecast(date=start_date)
+    #     session.add(entertainment_forecast_data)
+    #     session.add(kids_forecast_data)
+    #     session.commit()
+    #     start_date += delta
 
 
-  
+    for booking in bookings:
+        if booking.content_group == "3|Ex Kids Content":
+            while start_date <= end_date:
+                entertainment_forecast_data = Entertainment_Forecast(date=start_date, inventory_available=140000, inventory_used=inventory_used(start_date))
+                session.add(entertainment_forecast_data)
+                session.commit()
+                start_date += delta
+
+
+    # for booking in bookings:
+    #     if booking.content_group == "3|Ex Kids Content":
+    #         while start_date <= end_date:
+    #             kids_forecast_data = Kids_Forecast(date=start_date, inventory_available=140000, inventory_used=inventory_used(start_date))
+    #             session.add(kids_forecast_data)
+    #             session.commit()
+    #             start_date += delta
+
+    
+                
+
+    # while start_date <= end_date:
+    #     for booking in bookings:
+    #         if booking.content_group == "3|Kids Content":
+    #             kids_forecast_data = Kids_Forecast(date=start_date, inventory_available=140000, inventory_used=inventory_used(start_date))
+    #             session.add(kids_forecast_data)
+    #             session.commit()
+    #         start_date += delta
 
 
 
+    # while start_date <= end_date:
+    #     for booking in bookings:
+    #         if booking.content_group == "3|Ex Kids Content":
+    #             entertainment_forecast_data = Entertainment_Forecast(date=start_date, inventory_available=140000, inventory_used=inventory_used(start_date), inventory_remaining=inventory_remaining())
+    #             session.add(entertainment_forecast_data)
+    #             session.commit()
+    #             start_date += delta
+    #         elif booking.content_group == "3|Kids Content":
+    #             kids_forecast_data = Kids_Forecast(date=start_date, inventory_available=140000, inventory_used=inventory_used(start_date), inventory_remaining=inventory_remaining())
+    #             session.add(kids_forecast_data)
+    #             session.commit()
+    #             start_date += delta
+
+
+def inventory_used(start_date):
+    bookings = session.query(Bookings).all()
+    used_inventory = 0
+    for booking in bookings:
+        if start_date >= booking.start_date:
+            used_inventory += booking.daily_impressions
+        return used_inventory
+
+
+def inventory_remaining():
+    pass
 
 
 def app():
