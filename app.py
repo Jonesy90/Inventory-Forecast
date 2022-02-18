@@ -48,17 +48,17 @@ def daily_average(start_date, end_date, booked_impressions, delivered_impression
     """       
     today = datetime.date.today()
 
-    if today >= end_date:
+    if today >= end_date or today <= start_date:
         return 0
     elif today <= start_date:
         days_running = end_date - start_date
         average_impressions = int(booked_impressions) / (int(days_running.days) + 1)
-        print(f'{campaign_name} average Impr: {int(average_impressions)}')
+        # print(f'{campaign_name} average Impr: {int(average_impressions)}')
     elif today >= start_date:
         days_remaining = end_date - today
         remaining_impressons = int(booked_impressions) - int(delivered_impressions)
         average_impressions = int(remaining_impressons) / (int(days_remaining.days) + 1)
-        print(f'{campaign_name} average Impr: {int(average_impressions)}')
+        # print(f'{campaign_name} average Impr: {int(average_impressions)}')
     return int(average_impressions)
 
 def add_campaign_bookings():
@@ -104,7 +104,49 @@ def forecast():
     3. The USED INVENTORY and INVENTORY AVAILABLE is not totalling up to the inventory available.
 
     """
-    populate_date()
+    start_date = datetime.date(2022, 2, 1)
+    end_date = datetime.date(2022, 2, 28)
+    delta = datetime.timedelta(days=1)
+
+
+    while start_date <= end_date:
+        entertainment_forecast_data = Entertainment_Forecast(date=start_date, inventory_available=140000, inventory_used=inventory_used(start_date))
+        session.add(entertainment_forecast_data)
+        session.commit()
+        start_date += delta
+
+
+
+def inventory_used(start_date):
+    """
+    if booking.start_date <= start_date and end_date != booking.start_date
+
+    if 01/02/2022 <= 01/02/2022 (RETURNS TRUE) AND 28/02/2022 <= 01/02/2022 (RETURNS FALSE) -- TRUE AND FALSE (RETURNS FALSE)
+    if 01/02/2022 <= 15/02/2022 (RETURNS TRUE)
+    if 17/02/2022 <= 15/02/2022 (RETURNS FALSE)
+    if 02/02/2022 <= 28/02/2022 (RETURNS TRUE)
+
+    if booking.start_date <= start_date and booking.end_date <= start_date:
+    if 02/02/2022 <= 28/02/2022 (RETURNS TRUE) AND 27/02/2022 <= 28/02/2022 (RETURNS TRUE)
+
+    """
+    bookings = session.query(Bookings).all()
+    total = 0
+
+    for booking in bookings:
+        print(f'Booking: {booking.campaign_name}')
+        print(f'Total1: {total}')
+        if booking.start_date <= start_date and booking.end_date >= start_date:
+            total += booking.daily_impressions
+            print(f'Total4: {total}')
+    return total           
+
+
+
+
+
+
+
 
 
 def populate_date():
@@ -117,8 +159,6 @@ def populate_date():
         session.commit()
         start_date += delta
 
-def inventory_remaining():
-    pass
 
 
 def app():
