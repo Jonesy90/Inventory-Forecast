@@ -7,6 +7,7 @@ import argparse
 import pathlib
 import csv
 import datetime
+import xlsxwriter
 
 from models import Bookings
 
@@ -104,60 +105,129 @@ def forecast():
     3. The USED INVENTORY and INVENTORY AVAILABLE is not totalling up to the inventory available.
 
     """
+    fixed_start_date = datetime.date(2022, 2, 1)
     start_date = datetime.date(2022, 2, 1)
     end_date = datetime.date(2022, 2, 28)
     delta = datetime.timedelta(days=1)
 
 
     while start_date <= end_date:
-        entertainment_forecast_data = Entertainment_Forecast(date=start_date, inventory_available=140000, inventory_used=inventory_used(start_date))
-        session.add(entertainment_forecast_data)
-        session.commit()
+        entertainment_forecast_data = Entertainment_Forecast(date=start_date, inventory_available=140000, inventory_used=entertainment_inventory_used(start_date, fixed_start_date))
+        kids_forecast_data = Kids_Forecast(date=start_date, inventory_available=50000, inventory_used=kids_inventory_used(start_date, fixed_start_date))
+
+        entertainment_in_db = session.query(Entertainment_Forecast).filter(Entertainment_Forecast.date==entertainment_forecast_data.date).one_or_none()
+        kids_in_db = session.query(Kids_Forecast).filter(Kids_Forecast.date==entertainment_forecast_data.date).one_or_none()
+
+        if entertainment_in_db != None:
+            pass
+        else:
+            session.add(entertainment_forecast_data)
+            session.commit()
+
+        if kids_in_db != None:
+            pass
+        else:
+            session.add(kids_forecast_data)
+            session.commit()
+
         start_date += delta
 
+    create_workbook()
 
 
-def inventory_used(start_date):
+def entertainment_inventory_used(start_date, fixed_start_date):
     """
-    if booking.start_date <= start_date and end_date != booking.start_date
-
-    if 01/02/2022 <= 01/02/2022 (RETURNS TRUE) AND 28/02/2022 <= 01/02/2022 (RETURNS FALSE) -- TRUE AND FALSE (RETURNS FALSE)
-    if 01/02/2022 <= 15/02/2022 (RETURNS TRUE)
-    if 17/02/2022 <= 15/02/2022 (RETURNS FALSE)
-    if 02/02/2022 <= 28/02/2022 (RETURNS TRUE)
-
-    if booking.start_date <= start_date and booking.end_date <= start_date:
-    if 02/02/2022 <= 28/02/2022 (RETURNS TRUE) AND 27/02/2022 <= 28/02/2022 (RETURNS TRUE)
 
     """
     bookings = session.query(Bookings).all()
     total = 0
 
     for booking in bookings:
-        print(f'Booking: {booking.campaign_name}')
-        print(f'Total1: {total}')
-        if booking.start_date <= start_date and booking.end_date >= start_date:
+        if booking.content_group == '3|Ex Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date:
             total += booking.daily_impressions
-            print(f'Total4: {total}')
+            print(f'{booking.campaign_name} {booking.content_group}')
     return total           
 
 
+def kids_inventory_used(start_date, fixed_start_date):
+    """
+
+    """
+    bookings = session.query(Bookings).all()
+    total = 0
+
+    for booking in bookings:
+        if booking.content_group == '3|Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date:
+            total += booking.daily_impressions
+            print(f'{booking.campaign_name} {booking.content_group}')
+    return total  
 
 
+def create_workbook():
+    """
+    
+    """
+    entertainment_data = session.query(Entertainment_Forecast).all()
+    kids_data = session.query(Kids_Forecast).all()
 
 
+    workbook = xlsxwriter.Workbook('excel/Forecast.xlsx')
+    # worksheet1 = workbook.add_worksheet('Entertainment Forecast')
+    worksheet2 = workbook.add_worksheet('Entertainment Forecast')
+    worksheet3 = workbook.add_worksheet('Kids Forecast')
 
+    #Shared Formattting
+    date_format = workbook.add_format({'num_format': 'dd/mm/yy'})
+    merge_format = workbook.add_format({
+        'bold': True,
+        'align': "center",
+        'valign': "center"
+    })
+    title_format = workbook.add_format({
+        'bold': True,
+        'align': "center",
+        'valign': "center"
+    })
 
+    #Entertainment Forecast Sheet - Worksheet 2 - Formatting
 
-def populate_date():
-    start_date = datetime.date(2022, 2, 1)
-    end_date = datetime.date(2022, 2, 28)
-    delta = datetime.timedelta(days=1)
-    while start_date <= end_date:
-        entertainment_forecast_data = Entertainment_Forecast(date=start_date)
-        session.add(entertainment_forecast_data)
-        session.commit()
-        start_date += delta
+    #Entertainment Forecast Sheet - Worksheet 2
+    worksheet2.merge_range('B2:E2', 'Entertainment Inventory Forecast', merge_format)
+    worksheet2.write('B3', 'Date', title_format)
+    worksheet2.write('C3', 'Inventory Available', title_format)
+    worksheet2.write('D3', 'Inventory Used', title_format)
+    worksheet2.write('E3', 'Inventory Remaining', title_format)
+
+    rowIndex = 4
+
+    for data in entertainment_data:
+        worksheet2.write('B' + str(rowIndex), data.date, date_format)
+        worksheet2.write('C' + str(rowIndex), data.inventory_available)
+        worksheet2.write('D' + str(rowIndex), data.inventory_used)
+        worksheet2.write('E' + str(rowIndex), data.inventory_remaining)
+
+        rowIndex += 1
+    
+    rowIndex = 4
+    
+    #Entertainment Forecast Sheet - Worksheet 3 - Formatting
+
+    #Kids Forecast Sheet - Worksheet 3
+    worksheet3.merge_range('B2:E2', 'Entertainment Inventory Forecast', merge_format)
+    worksheet3.write('B3', 'Date', title_format)
+    worksheet3.write('C3', 'Inventory Available', title_format)
+    worksheet3.write('D3', 'Inventory Used', title_format)
+    worksheet3.write('E3', 'Inventory Remaining', title_format)
+
+    for data in kids_data:
+        worksheet3.write('B' + str(rowIndex), data.date, date_format)
+        worksheet3.write('C' + str(rowIndex), data.inventory_available)
+        worksheet3.write('D' + str(rowIndex), data.inventory_used)
+        worksheet3.write('E' + str(rowIndex), data.inventory_remaining)
+
+        rowIndex += 1
+
+    workbook.close()
 
 
 
