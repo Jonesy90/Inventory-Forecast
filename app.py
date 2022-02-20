@@ -32,7 +32,7 @@ def menu():
             \re : EXIT
             ''')
         users_choice = input('Please select an option: ').lower()
-        if users_choice in ['f', 'e']:
+        if users_choice in ['f', 'd', 'e']:
             return users_choice
         else:
             users_choice = input('''
@@ -112,8 +112,8 @@ def forecast():
 
 
     while start_date <= end_date:
-        entertainment_forecast_data = Entertainment_Forecast(date=start_date, inventory_available=140000, inventory_used=entertainment_inventory_used(start_date, fixed_start_date))
-        kids_forecast_data = Kids_Forecast(date=start_date, inventory_available=50000, inventory_used=kids_inventory_used(start_date, fixed_start_date))
+        entertainment_forecast_data = Entertainment_Forecast(date=start_date, inventory_available=140000, inventory_used=entertainment_inventory_used(start_date, fixed_start_date), inventory_remaining=(140000-entertainment_inventory_used(start_date, fixed_start_date)))
+        kids_forecast_data = Kids_Forecast(date=start_date, inventory_available=50000, inventory_used=kids_inventory_used(start_date, fixed_start_date), inventory_remaining=(50000-kids_inventory_used(start_date, fixed_start_date)))
 
         entertainment_in_db = session.query(Entertainment_Forecast).filter(Entertainment_Forecast.date==entertainment_forecast_data.date).one_or_none()
         kids_in_db = session.query(Kids_Forecast).filter(Kids_Forecast.date==entertainment_forecast_data.date).one_or_none()
@@ -132,7 +132,7 @@ def forecast():
 
         start_date += delta
 
-    create_workbook()
+
 
 
 def entertainment_inventory_used(start_date, fixed_start_date):
@@ -163,6 +163,10 @@ def kids_inventory_used(start_date, fixed_start_date):
     return total  
 
 
+def remaining_inventory():
+    entertainment = session.query(Entertainment_Forecast).all()
+
+
 def create_workbook():
     """
     
@@ -174,7 +178,6 @@ def create_workbook():
     workbook = xlsxwriter.Workbook('excel/Forecast.xlsx')
     # worksheet1 = workbook.add_worksheet('Entertainment Forecast')
     worksheet2 = workbook.add_worksheet('Entertainment Forecast')
-    worksheet3 = workbook.add_worksheet('Kids Forecast')
 
     #Shared Formattting
     date_format = workbook.add_format({'num_format': 'dd/mm/yy'})
@@ -188,8 +191,6 @@ def create_workbook():
         'align': "center",
         'valign': "center"
     })
-
-    #Entertainment Forecast Sheet - Worksheet 2 - Formatting
 
     #Entertainment Forecast Sheet - Worksheet 2
     worksheet2.merge_range('B2:E2', 'Entertainment Inventory Forecast', merge_format)
@@ -210,22 +211,22 @@ def create_workbook():
     
     rowIndex = 4
     
-    #Entertainment Forecast Sheet - Worksheet 3 - Formatting
-
-    #Kids Forecast Sheet - Worksheet 3
-    worksheet3.merge_range('B2:E2', 'Entertainment Inventory Forecast', merge_format)
-    worksheet3.write('B3', 'Date', title_format)
-    worksheet3.write('C3', 'Inventory Available', title_format)
-    worksheet3.write('D3', 'Inventory Used', title_format)
-    worksheet3.write('E3', 'Inventory Remaining', title_format)
+    #Kids Forecast Table
+    worksheet2.merge_range('G2:J2', 'Kids Inventory Forecast', merge_format)
+    worksheet2.write('H3', 'Date', title_format)
+    worksheet2.write('H3', 'Inventory Available', title_format)
+    worksheet2.write('I3', 'Inventory Used', title_format)
+    worksheet2.write('J3', 'Inventory Remaining', title_format)
 
     for data in kids_data:
-        worksheet3.write('B' + str(rowIndex), data.date, date_format)
-        worksheet3.write('C' + str(rowIndex), data.inventory_available)
-        worksheet3.write('D' + str(rowIndex), data.inventory_used)
-        worksheet3.write('E' + str(rowIndex), data.inventory_remaining)
+        worksheet2.write('G' + str(rowIndex), data.date, date_format)
+        worksheet2.write('H' + str(rowIndex), data.inventory_available)
+        worksheet2.write('I' + str(rowIndex), data.inventory_used)
+        worksheet2.write('J' + str(rowIndex), data.inventory_remaining)
 
         rowIndex += 1
+
+
 
     workbook.close()
 
@@ -239,9 +240,9 @@ def app():
         choice = menu()
         if choice == 'f':
             print('FORECAST')
-            forecast()
         elif choice == 'd':
             print('EXPORT')
+            create_workbook()
         elif choice == 'e':
             print('EXIT')
             app_running = False
