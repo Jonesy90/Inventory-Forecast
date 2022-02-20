@@ -1,15 +1,14 @@
 #Internal Imports
 from tracemalloc import start
 from models import *
+from excel_export import *
+# from models import Bookings
 
 #External Imports
 import argparse
 import pathlib
 import csv
 import datetime
-import xlsxwriter
-
-from models import Bookings
 
 
 
@@ -18,6 +17,7 @@ parser.add_argument('source_file', metavar='source_file', type=pathlib.Path, hel
 args = parser.parse_args()
 
 booking_uploaded_csv = args.source_file
+
 
 def menu():
     """
@@ -44,7 +44,7 @@ def menu():
 
 def daily_average(start_date, end_date, booked_impressions, delivered_impressions, campaign_name):
     """
-    Calculate the daily average for each booking within the Bookings DB.
+    Calculates the daily average for each booking within the Bookings DB.
 
     """       
     today = datetime.date.today()
@@ -62,9 +62,10 @@ def daily_average(start_date, end_date, booked_impressions, delivered_impression
         # print(f'{campaign_name} average Impr: {int(average_impressions)}')
     return int(average_impressions)
 
+
 def add_campaign_bookings():
     """
-    Read a CSV file to and add to the Bookings DB.
+    Reads the CSV file and adds to the Bookings DB.
 
     """
     
@@ -90,7 +91,7 @@ def add_campaign_bookings():
                 session.commit()
 
 
-def forecast():
+def current_status():
     """
     Populate the Forecast DB.
     DATE: It would have every date within the current month.
@@ -100,9 +101,6 @@ def forecast():
 
     FIX:
     1. Figure out a way to dynamically update the start and end date.
-    2. Loop over the Bookings DB.
-        a. If the campaign is live on the day, add the daily average impressions.
-    3. The USED INVENTORY and INVENTORY AVAILABLE is not totalling up to the inventory available.
 
     """
     fixed_start_date = datetime.date(2022, 2, 1)
@@ -133,11 +131,9 @@ def forecast():
         start_date += delta
 
 
-
-
 def entertainment_inventory_used(start_date, fixed_start_date):
     """
-
+    Calculates the inventory used from the bookings DB. The booking has to be a part of the Entertainment inventory bucket and be a valid date.
     """
     bookings = session.query(Bookings).all()
     total = 0
@@ -145,13 +141,12 @@ def entertainment_inventory_used(start_date, fixed_start_date):
     for booking in bookings:
         if booking.content_group == '3|Ex Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date:
             total += booking.daily_impressions
-            print(f'{booking.campaign_name} {booking.content_group}')
     return total           
 
 
 def kids_inventory_used(start_date, fixed_start_date):
     """
-
+    Calculates the inventory used from the bookings DB. The booking has to be a part of the Kids inventory bucket and be a valid date.
     """
     bookings = session.query(Bookings).all()
     total = 0
@@ -159,82 +154,13 @@ def kids_inventory_used(start_date, fixed_start_date):
     for booking in bookings:
         if booking.content_group == '3|Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date:
             total += booking.daily_impressions
-            print(f'{booking.campaign_name} {booking.content_group}')
     return total  
-
-
-def remaining_inventory():
-    entertainment = session.query(Entertainment_Forecast).all()
-
-
-def create_workbook():
-    """
-    
-    """
-    entertainment_data = session.query(Entertainment_Forecast).all()
-    kids_data = session.query(Kids_Forecast).all()
-
-
-    workbook = xlsxwriter.Workbook('excel/Forecast.xlsx')
-    # worksheet1 = workbook.add_worksheet('Entertainment Forecast')
-    worksheet2 = workbook.add_worksheet('Entertainment Forecast')
-
-    #Shared Formattting
-    date_format = workbook.add_format({'num_format': 'dd/mm/yy'})
-    merge_format = workbook.add_format({
-        'bold': True,
-        'align': "center",
-        'valign': "center"
-    })
-    title_format = workbook.add_format({
-        'bold': True,
-        'align': "center",
-        'valign': "center"
-    })
-
-    #Entertainment Forecast Sheet - Worksheet 2
-    worksheet2.merge_range('B2:E2', 'Entertainment Inventory Forecast', merge_format)
-    worksheet2.write('B3', 'Date', title_format)
-    worksheet2.write('C3', 'Inventory Available', title_format)
-    worksheet2.write('D3', 'Inventory Used', title_format)
-    worksheet2.write('E3', 'Inventory Remaining', title_format)
-
-    rowIndex = 4
-
-    for data in entertainment_data:
-        worksheet2.write('B' + str(rowIndex), data.date, date_format)
-        worksheet2.write('C' + str(rowIndex), data.inventory_available)
-        worksheet2.write('D' + str(rowIndex), data.inventory_used)
-        worksheet2.write('E' + str(rowIndex), data.inventory_remaining)
-
-        rowIndex += 1
-    
-    rowIndex = 4
-    
-    #Kids Forecast Table
-    worksheet2.merge_range('G2:J2', 'Kids Inventory Forecast', merge_format)
-    worksheet2.write('H3', 'Date', title_format)
-    worksheet2.write('H3', 'Inventory Available', title_format)
-    worksheet2.write('I3', 'Inventory Used', title_format)
-    worksheet2.write('J3', 'Inventory Remaining', title_format)
-
-    for data in kids_data:
-        worksheet2.write('G' + str(rowIndex), data.date, date_format)
-        worksheet2.write('H' + str(rowIndex), data.inventory_available)
-        worksheet2.write('I' + str(rowIndex), data.inventory_used)
-        worksheet2.write('J' + str(rowIndex), data.inventory_remaining)
-
-        rowIndex += 1
-
-
-
-    workbook.close()
 
 
 
 def app():
     add_campaign_bookings()
-    forecast()
+    current_status()
     app_running = True
     while app_running:
         choice = menu()
