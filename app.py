@@ -93,13 +93,8 @@ def add_campaign_bookings():
 
 def current_status():
     """
-    Populate the Forecast DB.
-    DATE: It would have every date within the current month.
-    INVENTORY AVAILABLE: The average amount of Inventory available.
-    INVENTORY USED: The amount of inventory used per day.
-    INVENTORY REMAINING: The amount of inventory remaining per day.
-
-    FIX:
+    Calculates the current status of Inventory Available, Inventory Used and Inventory Remaining through the current month.
+    FIX/UPDATES:
     1. Figure out a way to dynamically update the start and end date.
 
     """
