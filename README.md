@@ -1,7 +1,8 @@
 # Inventory-Forecast
 
 ## Description
-Takes in a CSV file, containing all the bookings for the current month. Calculates the daily average of impressions needed per day to ensure the booking delivers in full.
+Takes in a CSV file, containing all the bookings for the current month. Calculates the daily average of impressions needed per day and how much is remaining per day. This allows us to see which days within the month are overbooked and inventory available.
+
 Breaks off into two tables (Entertainment Forecast and Kids Forecast). The tables contain -
 1. Inventory Available
 2. Inventory Used
