@@ -2,6 +2,7 @@
 from tracemalloc import start
 from models import *
 from excel_export import *
+from functools import reduce
 # from models import Bookings
 
 #External Imports
@@ -9,6 +10,7 @@ import argparse
 import pathlib
 import csv
 import datetime
+import copy
 
 
 
@@ -42,7 +44,7 @@ def menu():
             \r*****************************''')
 
 
-def daily_average(start_date, end_date, booked_impressions, delivered_impressions, campaign_name):
+def daily_average(start_date, end_date, booked_impressions, delivered_impressions):
     """
     Calculates the daily average for each booking within the Bookings DB.
 
@@ -69,7 +71,7 @@ def add_campaign_bookings():
 
     """
     
-    with open(booking_uploaded_csv, newline='') as csvfile:
+    with open(booking_uploaded_csv) as csvfile:
         data = csv.DictReader(csvfile)
         for row in data:
             campaign_external_id = row['Campaign External ID']
@@ -79,7 +81,7 @@ def add_campaign_bookings():
             content_group = row['Content Group']
             booked_impressions = row['Campaign Booked Impressions'].replace(',', '')
             delivered_impressions = row['Impressions'].replace(',', '')
-            daily_impressions = daily_average(start_date, end_date, booked_impressions, delivered_impressions, campaign_name)
+            daily_impressions = daily_average(start_date, end_date, booked_impressions, delivered_impressions)
 
             new_booking = Bookings(campaign_external_id=campaign_external_id, campaign_name=campaign_name, start_date=start_date, end_date=end_date, content_group=content_group, booked_impressions=booked_impressions, delivered_impressions=delivered_impressions, daily_impressions=daily_impressions)
             booking_in_db = session.query(Bookings).filter(Bookings.campaign_external_id==new_booking.campaign_external_id).one_or_none()
@@ -91,6 +93,7 @@ def add_campaign_bookings():
                 session.commit()
 
 
+
 def current_status():
     """
     Calculates the current status of Inventory Available, Inventory Used and Inventory Remaining through the current month.
@@ -98,15 +101,21 @@ def current_status():
     1. Figure out a way to dynamically update the start and end date.
 
     """
+
     fixed_start_date = datetime.date(2022, 2, 1)
     start_date = datetime.date(2022, 2, 1)
     end_date = datetime.date(2022, 2, 28)
     delta = datetime.timedelta(days=1)
 
-
     while start_date <= end_date:
-        entertainment_forecast_data = Entertainment_Forecast(date=start_date, inventory_available=140000, inventory_used=entertainment_inventory_used(start_date, fixed_start_date), inventory_remaining=(140000-entertainment_inventory_used(start_date, fixed_start_date)))
-        kids_forecast_data = Kids_Forecast(date=start_date, inventory_available=50000, inventory_used=kids_inventory_used(start_date, fixed_start_date), inventory_remaining=(50000-kids_inventory_used(start_date, fixed_start_date)))
+        entertainment_forecast_data = Entertainment_Forecast(date=start_date,
+            inventory_available=150000,
+            inventory_used=reduce(get_entertainment_inventory_used,[booking.daily_impressions for booking in session.query(Bookings).all() if booking.content_group == '3|Ex Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date]),
+            inventory_remaining=0)
+        kids_forecast_data = Kids_Forecast(date=start_date,
+            inventory_available=50000,
+            inventory_used=reduce(get_kids_inventory_used, [booking.daily_impressions for booking in session.query(Bookings).all() if booking.content_group == '3|Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date]),
+            inventory_remaining=0)
 
         entertainment_in_db = session.query(Entertainment_Forecast).filter(Entertainment_Forecast.date==entertainment_forecast_data.date).one_or_none()
         kids_in_db = session.query(Kids_Forecast).filter(Kids_Forecast.date==entertainment_forecast_data.date).one_or_none()
@@ -125,32 +134,15 @@ def current_status():
 
         start_date += delta
 
+def get_remaining_inventory(booking):
+    print(booking.inventory_available)
+    return booking.inventory_available - booking.inventory_used
 
-def entertainment_inventory_used(start_date, fixed_start_date):
-    """
-    Calculates the inventory used from the bookings DB. The booking has to be a part of the Entertainment inventory bucket and be a valid date.
-    """
-    bookings = session.query(Bookings).all()
-    total = 0
+def get_entertainment_inventory_used(booking1, booking2):
+    return booking1 + booking2
 
-    for booking in bookings:
-        if booking.content_group == '3|Ex Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date:
-            total += booking.daily_impressions
-    return total           
-
-
-def kids_inventory_used(start_date, fixed_start_date):
-    """
-    Calculates the inventory used from the bookings DB. The booking has to be a part of the Kids inventory bucket and be a valid date.
-    """
-    bookings = session.query(Bookings).all()
-    total = 0
-
-    for booking in bookings:
-        if booking.content_group == '3|Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date:
-            total += booking.daily_impressions
-    return total  
-
+def get_kids_inventory_used(booking1, booking2):
+    return booking1 + booking2
 
 
 def app():
