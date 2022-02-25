@@ -1,4 +1,4 @@
-# Inventory-Forecast
+# Inventory Forecast
 
 ## Description
 Takes in a CSV file, containing all the bookings for the current month. Calculates the daily average of impressions needed per day and how much is remaining per day. This allows us to see which days within the month are overbooked and inventory available.
