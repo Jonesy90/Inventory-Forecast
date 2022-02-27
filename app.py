@@ -10,7 +10,6 @@ import argparse
 import pathlib
 import csv
 import datetime
-import copy
 
 
 
@@ -108,14 +107,17 @@ def current_status():
     delta = datetime.timedelta(days=1)
 
     while start_date <= end_date:
-        entertainment_forecast_data = Entertainment_Forecast(date=start_date,
+        entertainment_forecast_data = Entertainment_Forecast(
+            date=start_date,
             inventory_available=150000,
-            inventory_used=reduce(get_entertainment_inventory_used,[booking.daily_impressions for booking in session.query(Bookings).all() if booking.content_group == '3|Ex Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date]),
-            inventory_remaining=0)
+            inventory_used=reduce(get_entertainment_inventory_used,[booking.daily_impressions for booking in session.query(Bookings).all() 
+                if booking.content_group == '3|Ex Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date])
+        )
         kids_forecast_data = Kids_Forecast(date=start_date,
             inventory_available=50000,
-            inventory_used=reduce(get_kids_inventory_used, [booking.daily_impressions for booking in session.query(Bookings).all() if booking.content_group == '3|Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date]),
-            inventory_remaining=0)
+            inventory_used=reduce(get_kids_inventory_used, [booking.daily_impressions for booking in session.query(Bookings).all() 
+                if booking.content_group == '3|Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date])
+        )
 
         entertainment_in_db = session.query(Entertainment_Forecast).filter(Entertainment_Forecast.date==entertainment_forecast_data.date).one_or_none()
         kids_in_db = session.query(Kids_Forecast).filter(Kids_Forecast.date==entertainment_forecast_data.date).one_or_none()

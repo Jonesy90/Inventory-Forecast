@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, Column, String, Integer, Date
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import sessionmaker
 
 
@@ -32,7 +33,10 @@ class Entertainment_Forecast(Base):
     date = Column('Date', Date)
     inventory_available = Column('Inventory Available', Integer)
     inventory_used = Column('Inventory Used', Integer)
-    inventory_remaining = Column('Inventory Remaining', Integer)
+
+    @hybrid_property
+    def inventory_remaining(self):
+        return self.inventory_available - self.inventory_used
 
     def __repr__(self):
         return f'<Entertainment_Forecast(Date={self.date}, Inventory Available={self.inventory_available}, Inventory Used={self.inventory_used}, Inventory Remaining={self.inventory_remaining})>'
@@ -45,7 +49,10 @@ class Kids_Forecast(Base):
     date = Column('Date', Date)
     inventory_available = Column('Inventory Available', Integer)
     inventory_used = Column('Inventory Used', Integer)
-    inventory_remaining = Column('Inventory Remaining', Integer)
+
+    @hybrid_property
+    def inventory_remaining(self):
+        return self.inventory_available - self.inventory_used
 
     def __repr__(self):
         return f'<Kids_Forecast(Date={self.date}, Inventory Available={self.inventory_available}, Inventory Used={self.inventory_used}, Inventory Remaining={self.inventory_remaining})>'
