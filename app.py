@@ -12,36 +12,11 @@ import csv
 import datetime
 
 
-
 parser = argparse.ArgumentParser(description='Uploads the CSV, process it.')
 parser.add_argument('source_file', metavar='source_file', type=pathlib.Path, help='Upload the CSV file.')
 args = parser.parse_args()
 
 booking_uploaded_csv = args.source_file
-
-
-def menu():
-    """
-    After the CSV has been uploaded, a menu will appear for the user to make a collection.
-    
-    """
-    while True:
-        print('''
-            \n*****MAIN MENU*****:
-            \rf : FORECAST
-            \rd : EXPORT
-            \re : EXIT
-            ''')
-        users_choice = input('Please select an option: ').lower()
-        if users_choice in ['f', 'd', 'e']:
-            return users_choice
-        else:
-            users_choice = input('''
-            \n**********MENU ERROR***********
-            \rInvalid Option
-            \rPress Enter to try again.
-            \r*****************************''')
-
 
 def daily_average(start_date, end_date, booked_impressions, delivered_impressions):
     """
@@ -49,8 +24,12 @@ def daily_average(start_date, end_date, booked_impressions, delivered_impression
 
     """       
     today = datetime.date.today()
+    # print(start_date)
+    # print(end_date)
+    # print(booked_impressions)
+    # print(delivered_impressions)
 
-    if today >= end_date or today <= start_date:
+    if today >= end_date:
         return 0
     elif today <= start_date:
         days_running = end_date - start_date
@@ -73,12 +52,13 @@ def add_campaign_bookings():
     with open(booking_uploaded_csv) as csvfile:
         data = csv.DictReader(csvfile)
         for row in data:
-            campaign_external_id = row['Campaign External ID']
+            # print(row)
+            campaign_external_id = row['\ufeffCampaign External ID']
             campaign_name = row['Campaign']
             start_date = datetime.datetime.strptime(row['Campaign Start Date'], '%d/%m/%Y').date()
             end_date = datetime.datetime.strptime(row['Campaign End Date'], '%d/%m/%Y').date()
             content_group = row['Content Group']
-            booked_impressions = row['Campaign Booked Impressions'].replace(',', '')
+            booked_impressions = row['Booked Impressions'].replace(',', '')
             delivered_impressions = row['Impressions'].replace(',', '')
             daily_impressions = daily_average(start_date, end_date, booked_impressions, delivered_impressions)
 
@@ -92,7 +72,6 @@ def add_campaign_bookings():
                 session.commit()
 
 
-
 def current_status():
     """
     Calculates the current status of Inventory Available, Inventory Used and Inventory Remaining through the current month.
@@ -101,9 +80,9 @@ def current_status():
 
     """
 
-    fixed_start_date = datetime.date(2022, 2, 1)
-    start_date = datetime.date(2022, 2, 1)
-    end_date = datetime.date(2022, 2, 28)
+    # fixed_start_date = datetime.date(2022, 3, 1)
+    start_date = datetime.date(2022, 3, 1)
+    end_date = datetime.date(2022, 3, 31)
     delta = datetime.timedelta(days=1)
 
     while start_date <= end_date:
@@ -111,12 +90,12 @@ def current_status():
             date=start_date,
             inventory_available=150000,
             inventory_used=reduce(get_entertainment_inventory_used,[booking.daily_impressions for booking in session.query(Bookings).all() 
-                if booking.content_group == '3|Ex Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date])
+                if booking.content_group == '3|Ex Kids Content' and start_date <= booking.end_date])
         )
         kids_forecast_data = Kids_Forecast(date=start_date,
             inventory_available=50000,
             inventory_used=reduce(get_kids_inventory_used, [booking.daily_impressions for booking in session.query(Bookings).all() 
-                if booking.content_group == '3|Kids Content' and booking.start_date <= start_date and booking.start_date >= fixed_start_date])
+                if booking.content_group == '3|Kids Content' and start_date <= booking.end_date])
         )
 
         entertainment_in_db = session.query(Entertainment_Forecast).filter(Entertainment_Forecast.date==entertainment_forecast_data.date).one_or_none()
@@ -147,22 +126,8 @@ def get_kids_inventory_used(booking1, booking2):
     return booking1 + booking2
 
 
-def app():
-    add_campaign_bookings()
-    current_status()
-    app_running = True
-    while app_running:
-        choice = menu()
-        if choice == 'f':
-            print('FORECAST')
-        elif choice == 'd':
-            print('EXPORT')
-            create_workbook()
-        elif choice == 'e':
-            print('EXIT')
-            app_running = False
-
-
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
-    app()
+    add_campaign_bookings()
+    current_status()
+    create_workbook()
