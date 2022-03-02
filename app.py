@@ -1,9 +1,8 @@
 #Internal Imports
-from tracemalloc import start
+# from tracemalloc import start
 from models import *
 from excel_export import *
 from functools import reduce
-# from models import Bookings
 
 #External Imports
 import argparse
