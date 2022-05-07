@@ -13,11 +13,11 @@ class Bookings(Base):
     __tablename__ = "Bookings"
 
     id = Column(Integer, primary_key=True)
-    campaign_external_id = Column('Campaign External ID', String)
+    campaign_external_id = Column('Campaign External ID', String, nullable=False)
     campaign_name = Column('Campaign', String)
     start_date = Column('Campaign Start Date', Date)
     end_date = Column('Campaign End Date', Date)
-    content_group = Column('Content Group', String)
+    content_group = Column('Content Group', String, nullable=False)
     booked_impressions = Column('Booked Impressions', Integer)
     delivered_impressions = Column('Impressions', Integer)
     daily_impressions = Column('Daily Impressions', Integer)
