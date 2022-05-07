@@ -75,13 +75,12 @@ def current_status():
     """
     Calculates the current status of Inventory Available, Inventory Used and Inventory Remaining through the current month.
     FIX/UPDATES:
-    1. Figure out a way to dynamically update the start and end date.
+    1. Figure out a way to dynamically update the end date.
 
     """
-
-    # fixed_start_date = datetime.date(2022, 3, 1)
-    start_date = datetime.date(2022, 3, 1)
-    end_date = datetime.date(2022, 3, 31)
+    today = datetime.today()
+    start_date = datetime.date(today.year, today.month, 1)
+    end_date = datetime.date(today.year, today.month, 31)
     delta = datetime.timedelta(days=1)
 
     while start_date <= end_date:
