@@ -9,6 +9,7 @@ import argparse
 import pathlib
 import csv
 import datetime
+import calendar
 
 
 parser = argparse.ArgumentParser(description='Uploads the CSV, process it.')
@@ -74,14 +75,15 @@ def add_campaign_bookings():
 def current_status():
     """
     Calculates the current status of Inventory Available, Inventory Used and Inventory Remaining through the current month.
-    FIX/UPDATES:
-    1. Figure out a way to dynamically update the end date.
-
+    
     """
-    today = datetime.today()
+    today = datetime.date.today()
     start_date = datetime.date(today.year, today.month, 1)
-    end_date = datetime.date(today.year, today.month, 31)
+    end_date = datetime.date(today.year, today.month, calendar.monthrange(today.year, today.month)[-1])
     delta = datetime.timedelta(days=1)
+
+    print(start_date)
+    print(end_date)
 
     while start_date <= end_date:
         entertainment_forecast_data = Entertainment_Forecast(
